@@ -1,6 +1,6 @@
 #include "../imports/stdlib.fc";
 
-() emit(slice body) inline {
+() emit(slice body) impure inline {
     ;; ext_out_msg_info$11 src:MsgAddressInt dest:MsgAddressExt created_lt:uint64 created_at:uint32
     ;;                     maybe: stateInit (false) bodyRef: bool (true)
     builder c = begin_cell()
@@ -8,4 +8,15 @@
         .store_ref(body);
 
     send_raw_message(c.end_cell(), 0);
+}
+
+slice emit_body(int op, int query_id, slice source, slice destination, slice note?) inline {
+    builder c = begin_cell()
+        .store_uint(op, 32)
+        .store_uint(query_id, 64)
+        .store_slice(source)
+        .store_slice(destination)
+        .store_maybe_ref(note?);
+
+    return c.end_cell();
 }

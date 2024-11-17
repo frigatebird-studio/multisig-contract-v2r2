@@ -162,7 +162,7 @@ export class Multisig implements Contract {
     static packOrder(actions: Array<Action>) {
         let order_dict = Dictionary.empty(Dictionary.Keys.Uint(8), Dictionary.Values.Cell());
         if (actions.length > 255) {
-            throw new Error("For action chains above 255, use packLarge method");
+            throw new Error("Action chains above 255 elements are not supported");
         }
         else {
             // pack transfers to the order_body cell
