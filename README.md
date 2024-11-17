@@ -8,8 +8,8 @@ We introduced some improvements to level up the whole signature process and enha
 
 ## Progress
 
-[x] FunC version
-[ ] Tolk version
+- [x] FunC version
+- [ ] Tolk version
 
 ## Why we are proposing the Refinement?
 
