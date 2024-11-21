@@ -147,7 +147,7 @@ slice get_text_comment(slice in_msg_body) impure inline {
 
         try_execute(query_id);
 
-        emit(emit_body(op::approve_accepted, query_id, sender_address, my_address(), null()));
+        emit_log(emit_body(op::approve_accepted, query_id, response_address, my_address(), null()));
 
         save_data();
 
@@ -162,7 +162,7 @@ slice get_text_comment(slice in_msg_body) impure inline {
             SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE | SEND_MODE_BOUNCE_ON_ACTION_FAIL
         );
 
-        emit(emit_body(op::approve_rejected, query_id, sender_address, my_address(), null()));
+        emit_log(emit_body(op::approve_rejected, query_id, response_address, my_address(), null()));
     }
 }
 
@@ -207,7 +207,6 @@ slice get_text_comment(slice in_msg_body) impure inline {
             expiration_date = in_msg_body~load_timestamp();
             throw_unless(error::expired, expiration_date >= now()); ;; in case of error TONs will bounce back to multisig
             order = in_msg_body~load_ref();
-            created_date = in_msg_body~load_timestamp();
 
             int approve_on_init? = in_msg_body~load_bool();
             if (approve_on_init?) {
@@ -215,9 +214,11 @@ slice get_text_comment(slice in_msg_body) impure inline {
                 add_approval(signer_index);
                 try_execute(query_id);
             }
+
+            created_date = in_msg_body~load_timestamp();
             in_msg_body.end_parse();
 
-            emit(emit_body(op, query_id, sender_address, my_address(), null()));
+            emit_log(emit_body(op, query_id, sender_address, my_address(), null()));
 
             save_data();
             return ();

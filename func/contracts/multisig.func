@@ -19,7 +19,7 @@ int validate_dictionary_sequence(cell dict) impure inline {
     return expected_index;
 }
 
-int check_signers_all_unique(slice signers) impure inline {
+int check_signers_all_unique(cell signers) impure inline {
     ;; - O(n^2) complexity
     ;; - O(n) memory
     ;; - pseudo code:
@@ -33,7 +33,7 @@ int check_signers_all_unique(slice signers) impure inline {
 
     int signers_all_unique? = true;
     int i = -1;
-    do{
+    do {
         int j = i;
         (i, slice i_value, int i_next_found?) = signers.udict_get_next?(INDEX_SIZE, i);
         if((i_next_found?) & (signers_all_unique?)) {
@@ -85,7 +85,7 @@ int check_signers_all_unique(slice signers) impure inline {
 
                 action.end_parse();
 
-                found = false; ;; just skip all following actions after config update
+                found? = false; ;; just skip all following actions after config update
             }
         }
     } until (~ found?);
@@ -148,6 +148,8 @@ int check_signers_all_unique(slice signers) impure inline {
     throw_unless(error::duplicated_signers, ~ is_signers_all_unique); ;; check that signers are unique, but allow duplicated proposers
 
     if (op == op::new_order) {
+        int current_date = now();
+
         int order_seqno = in_msg_body~load_order_seqno();
         if (~ allow_arbitrary_order_seqno) {
             if (order_seqno == MAX_ORDER_SEQNO) {
@@ -168,7 +170,7 @@ int check_signers_all_unique(slice signers) impure inline {
         throw_unless(error::unauthorized_new_order, equal_slices_bits(sender_address, expected_address));
         throw_unless(error::expired, expiration_date >= now());
 
-        int minimal_value = calculate_order_processing_cost(order_body, signers, expiration_date - now());
+        int minimal_value = calculate_order_processing_cost(order_body, signers, expiration_date - current_date);
         throw_unless(error::not_enough_ton, msg_value >= minimal_value);
 
         cell state_init = calculate_order_state_init(my_address(), order_seqno);
@@ -183,7 +185,7 @@ int check_signers_all_unique(slice signers) impure inline {
         if (signer?) {
             init_body = init_body.store_index(index);
         }
-        init_body = init_body.store_timestamp(now());
+        init_body = init_body.store_timestamp(current_date);
         
         send_message_with_state_init_and_body(
             order_address,
@@ -194,7 +196,7 @@ int check_signers_all_unique(slice signers) impure inline {
             SEND_MODE_CARRY_ALL_REMAINING_MESSAGE_VALUE | SEND_MODE_BOUNCE_ON_ACTION_FAIL
         );
 
-        emit(emit_body(op, query_id, sender_address, my_address(), null()));
+        emit_log(emit_body(op, query_id, sender_address, my_address(), null()));
 
     } elseif (op == op::execute) {
         ;; check that sender is order smart-contract and check that it has recent
@@ -219,24 +221,24 @@ int check_signers_all_unique(slice signers) impure inline {
 
         (threshold, signers, signers_num, proposers, updated_date)~execute_order(order_body);
 
-        emit(emit_body(op, query_id, sender_address, my_address(), null()));
+        emit_log(emit_body(op, query_id, sender_address, my_address(), null()));
     }
 
     save_data(next_order_seqno, threshold, signers, signers_num, proposers, allow_arbitrary_order_seqno, updated_date);
 }
 
-(int, int, cell, cell) get_multisig_data() method_id {
-    (int next_order_seqno, int threshold, cell signers, int signers_num, cell proposers, int allow_arbitrary_order_seqno) = load_data();
+(int, int, cell, cell, int) get_multisig_data() method_id {
+    (int next_order_seqno, int threshold, cell signers, int signers_num, cell proposers, int allow_arbitrary_order_seqno, int updated_date) = load_data();
     throw_unless(error::inconsistent_data, signers_num == validate_dictionary_sequence(signers));
     validate_dictionary_sequence(proposers);
     throw_unless(error::invalid_signers, signers_num >= 1);
     throw_unless(error::invalid_threshold, threshold > 0);
     throw_unless(error::invalid_threshold, threshold <= signers_num);
-    return (allow_arbitrary_order_seqno ? -1 : next_order_seqno, threshold, signers, proposers);
+    return (allow_arbitrary_order_seqno ? -1 : next_order_seqno, threshold, signers, proposers, updated_date);
 }
 
 int get_order_estimate(cell order, int expiration_date) method_id {
-    (_, _, cell signers, _, _, _) = load_data();
+    (_, _, cell signers, _, _, _, _) = load_data();
     return calculate_order_processing_cost(order, signers, expiration_date - now());
 }
 
