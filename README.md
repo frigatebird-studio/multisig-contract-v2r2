@@ -22,8 +22,9 @@ We introduced some improvements to level up the whole signature process and enha
 
 ### Whats New About V2R2?
 
-1. Add a `updated_date` variable to Multisig and add a `created_date` variable to Order, so that all previous Orders since config change on Multisig become invalid.
-1. Skip all following actions if `update_config` action is executed to prevent uncertain behaviors from signer's perspective.
-1. Remove the support for actions over 255 (no more `executed_internal`).
-1. No more duplicated signers in Multisig.
-1. Emit logs (external-message-out) for every event such as Multisig-Deployed, New-Order-Deployed, Order-Approved, Order-Executed, ... etc.
+1. Add a `updated_date` variable to Multisig and add a `created_date` variable to Order, so that all previous Orders since config change on Multisig become invalid, and we can now deploy different Multisig contract with same signers (due to different `updated_date`).
+2. Skip all following actions if `update_config` action is executed to prevent uncertain behaviors from signer's perspective.
+3. Remove the support for actions over 255 (no more `executed_internal`).
+4. No more duplicated signers in Multisig.
+5. Emit logs (external-message-out) for every event such as Multisig-Deployed, New-Order-Deployed, Order-Approved, Order-Executed, ... etc.
+   
