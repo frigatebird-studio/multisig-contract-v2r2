@@ -16,6 +16,7 @@ const int error::already_executed = 112;
 
 const int error::config_outdated = 113;
 const int error::duplicated_signers = 114;
+const int error::invalid_updated_date = 115;
 
 const int error::unknown_op = 0xffff;
 

@@ -26,6 +26,13 @@ describe('Multisig', () => {
     beforeAll(async () => {
         code = await compile('Multisig');
         blockchain = await Blockchain.create();
+        
+        // blockchain.verbosity = {
+        //     print: true,
+        //     blockchainLogs: true,
+        //     vmLogs: 'vm_logs_full',
+        //     debugLogs: true,
+        // }
 
         const _libs = Dictionary.empty(Dictionary.Keys.BigUint(256), Dictionary.Values.Cell());
         let order_code_raw = await compile('Order');
@@ -282,7 +289,7 @@ describe('Multisig', () => {
             from: deployer.address,
             to: multisig.address,
             success: true,
-            outMessagesCount: 1
+            outMessagesCount: 2
         });
         expect((await multisig.getMultisigData()).nextOrderSeqno).toEqual(initialSeqno + 1n);
         let orderAddress = await multisig.getOrderAddress(initialSeqno);
@@ -337,7 +344,7 @@ describe('Multisig', () => {
             on: orderAddress,
             op: Op.order.approve,
             success: true,
-            outMessagesCount: 2 // Make sure both approval notification and exec message is produced
+            outMessagesCount: 3 // Make sure both approval notification and exec message is produced
         });
         // Make sure exec transaction is not yet proccessed
         expect(findTransaction(txs, {
@@ -376,7 +383,7 @@ describe('Multisig', () => {
             from: proposer.address,
             to: multisig.address,
             success: true,
-            outMessagesCount: 1
+            outMessagesCount: 2
         });
         expect((await multisig.getMultisigData()).nextOrderSeqno).toEqual(initialSeqno + 1n);
         let orderAddress = await multisig.getOrderAddress(initialSeqno);
@@ -423,7 +430,7 @@ describe('Multisig', () => {
             from: deployer.address,
             to: multisig.address,
             success: true,
-            outMessagesCount: 1
+            outMessagesCount: 2
         });
         expect((await multisig.getMultisigData()).nextOrderSeqno).toEqual(initialSeqno + 1n);
         let orderAddress = await multisig.getOrderAddress(initialSeqno);

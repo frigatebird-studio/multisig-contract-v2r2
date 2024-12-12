@@ -18,7 +18,7 @@ int validate_dictionary_sequence(cell dict) impure inline {
     } until (~ found?);
     return expected_index;
 }
-
+{-
 int check_signers_all_unique(cell signers) impure inline {
     ;; - O(n^2) complexity
     ;; - O(n) memory
@@ -51,6 +51,38 @@ int check_signers_all_unique(cell signers) impure inline {
 
     return signers_all_unique?;
 }
+-}
+
+int check_signers_all_unique(cell signers) impure inline {
+    ;; Early exit if dictionary is empty
+    (int first_idx, slice first_value, int found?) = signers.udict_get_next?(INDEX_SIZE, -1);
+    if (~ found?) {
+        return true;
+    }
+
+    int i = -1;
+    repeat (MASK_SIZE) {  ;; Use fixed upper bound instead of dynamic check
+        (i, slice i_value, int i_found?) = signers.udict_get_next?(INDEX_SIZE, i);
+        if (~ i_found?) {
+            ;; Reached end of dictionary - all values were unique
+            return true;
+        }
+
+        ;; Start checking from next index to avoid self-comparison
+        int j = i;
+        (j, slice j_value, int j_found?) = signers.udict_get_next?(INDEX_SIZE, j);
+        
+        ;; Check remaining values for duplicates
+        while (j_found?) {
+            if (equal_slices_bits(i_value, j_value)) {
+                return false;  ;; Found duplicate - exit early
+            }
+            (j, j_value, j_found?) = signers.udict_get_next?(INDEX_SIZE, j);
+        }
+    }
+
+    return true;  ;; No duplicates found
+}
 
 ((int, cell, int, cell, int), ()) ~execute_order((int, cell, int, cell, int) storage, cell order_body) impure inline {
 
@@ -78,7 +110,7 @@ int check_signers_all_unique(cell signers) impure inline {
                 throw_unless(error::invalid_threshold, threshold <= signers_num);
 
                 int is_signers_all_unique = check_signers_all_unique(signers);
-                throw_unless(error::invalid_signers, ~ is_signers_all_unique);
+                throw_unless(error::invalid_signers, is_signers_all_unique);
 
                 proposers = action~load_dict();
                 validate_dictionary_sequence(proposers);
@@ -145,7 +177,9 @@ int check_signers_all_unique(cell signers) impure inline {
     (int next_order_seqno, int threshold, cell signers, int signers_num, cell proposers, int allow_arbitrary_order_seqno, int updated_date) = load_data();
 
     int is_signers_all_unique = check_signers_all_unique(signers);
-    throw_unless(error::duplicated_signers, ~ is_signers_all_unique); ;; check that signers are unique, but allow duplicated proposers
+    throw_unless(error::duplicated_signers, is_signers_all_unique); ;; check that signers are unique, but allow duplicated proposers
+
+    throw_unless(error::invalid_updated_date, updated_date <= now()); ;; check that updated_date is not in the future
 
     if (op == op::new_order) {
         int current_date = now();
@@ -164,7 +198,9 @@ int check_signers_all_unique(cell signers) impure inline {
         int index = in_msg_body~load_index();
         int expiration_date = in_msg_body~load_timestamp();
         cell order_body = in_msg_body~load_ref();
+        int order_created_date = in_msg_body~load_timestamp();
         in_msg_body.end_parse();
+
         (slice expected_address, int found?) = (signer? ? signers : proposers).udict_get?(INDEX_SIZE, index);
         throw_unless(error::unauthorized_new_order, found?);
         throw_unless(error::unauthorized_new_order, equal_slices_bits(sender_address, expected_address));
@@ -202,12 +238,16 @@ int check_signers_all_unique(cell signers) impure inline {
         ;; check that sender is order smart-contract and check that it has recent
         ;; signers dict
 
+        ~strdump("op::execute start");
+
         int order_seqno = in_msg_body~load_order_seqno();
         int expiration_date = in_msg_body~load_timestamp();
         int approvals_num = in_msg_body~load_index();
         int signers_hash = in_msg_body~load_hash();
         cell order_body = in_msg_body~load_ref();
         int order_created_date = in_msg_body~load_timestamp();
+
+        ~strdump("op::execute parsed");
 
         in_msg_body.end_parse();
 

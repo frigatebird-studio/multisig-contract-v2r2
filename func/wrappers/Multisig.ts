@@ -57,6 +57,7 @@ export function multisigConfigToCell(config: MultisigConfig): Cell {
         .storeUint(config.signers.length, Params.bitsize.signerIndex)
         .storeDict(arrayToCell(config.proposers))
         .storeBit(config.allowArbitrarySeqno)
+        .storeUint(Math.floor(Date.now() / 1000), Params.bitsize.time)
         .endCell();
 }
 
@@ -188,6 +189,7 @@ export class Multisig implements Contract {
             .storeBit(isSigner)
             .storeUint(addrIdx, Params.bitsize.signerIndex)
             .storeUint(expirationDate, Params.bitsize.time)
+            .storeUint(Math.floor(Date.now() / 1000), Params.bitsize.time)
 
         if (actions instanceof Cell) {
             return msgBody.storeRef(actions).endCell();
@@ -263,6 +265,7 @@ export class Multisig implements Contract {
         const threshold = stack.readBigNumber();
         const signers = cellToArray(stack.readCellOpt());
         const proposers = cellToArray(stack.readCellOpt());
-        return { nextOrderSeqno, threshold, signers, proposers };
+        const updatedDate = stack.readNumber();
+        return { nextOrderSeqno, threshold, signers, proposers, updatedDate };
     }
 }

@@ -36,6 +36,13 @@ describe('Order', () => {
         let code_raw = await compile('Order');
         blockchain = await Blockchain.create();
 
+        // blockchain.verbosity = {
+        //     print: true,
+        //     blockchainLogs: true,
+        //     vmLogs: 'vm_logs_full',
+        //     debugLogs: true,
+        // }
+
         const _libs = Dictionary.empty(Dictionary.Keys.BigUint(256), Dictionary.Values.Cell());
         _libs.set(BigInt(`0x${code_raw.hash().toString('hex')}`), code_raw);
         const libs = beginCell().storeDictDirect(_libs).endCell();

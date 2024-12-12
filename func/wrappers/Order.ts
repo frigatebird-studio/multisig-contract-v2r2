@@ -61,11 +61,13 @@ export class Order implements Contract {
                 .storeRef(beginCell().storeDictDirect(arrayToCell(signers)))
                 .storeUint(expiration_date, Params.bitsize.time)
                 .storeRef(order)
-                .storeBit(approve_on_init);
+                .storeBit(approve_on_init)
 
        if(approve_on_init) {
            msgBody.storeUint(signer_idx, Params.bitsize.signerIndex);
        }
+
+       msgBody.storeUint(Math.floor(Date.now() / 1000), Params.bitsize.time);
 
        return msgBody.endCell();
     }
@@ -106,7 +108,7 @@ export class Order implements Contract {
        (slice multisig, int order_seqno, int threshold,
                      int sent_for_execution?, cell signers,
                      int approvals, int approvals_num, int expiration_date,
-                     cell order)
+                     cell order, int created_date)
        */
        const { stack } = await provider.get("get_order_data", []);
        const multisig = stack.readAddress();
@@ -118,6 +120,7 @@ export class Order implements Contract {
        const approvals_num = stack.readNumberOpt();
        const expiration_date = stack.readBigNumberOpt();
        const order = stack.readCellOpt();
+       const created_date = stack.readNumberOpt();
        let approvalsArray: Array<boolean>;
        if(approvals !== null) {
         approvalsArray = Array(256);
@@ -130,7 +133,7 @@ export class Order implements Contract {
        }
        return {
               inited: threshold !== null, multisig, order_seqno, threshold, executed, signers,
-              approvals: approvalsArray, approvals_num: approvals_num, _approvals : approvals, expiration_date, order
+              approvals: approvalsArray, approvals_num: approvals_num, _approvals : approvals, expiration_date, order, created_date
        };
     }
 }

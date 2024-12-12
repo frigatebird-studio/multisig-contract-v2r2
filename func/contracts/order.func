@@ -19,6 +19,7 @@ global cell order;
 global int created_date;
 
 () load_data() impure inline {
+    ~strdump("load_data start");
     slice ds = get_data().begin_parse();
     multisig_address = ds~load_msg_addr();
     order_seqno = ds~load_order_seqno();
@@ -44,6 +45,7 @@ global int created_date;
         created_date = ds~load_timestamp();
         ds.end_parse();
     }
+    ~strdump("load_data done");
 }
 
 () save_data() impure inline {
@@ -233,6 +235,7 @@ slice get_text_comment(slice in_msg_body) impure inline {
             int approve_on_init? = in_msg_body~load_bool();
             throw_unless(error::already_inited, approve_on_init?);
             int signer_index = in_msg_body~load_index();
+            throw_unless(error::already_inited, in_msg_body~load_timestamp() == created_date);
             in_msg_body.end_parse();
             (slice signer_address, int found?) = signers.udict_get?(INDEX_SIZE, signer_index);
             throw_unless(error::unauthorized_sign, found?);
