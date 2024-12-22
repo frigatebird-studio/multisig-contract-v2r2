@@ -18,7 +18,7 @@ int validate_dictionary_sequence(cell dict) impure inline {
     } until (~ found?);
     return expected_index;
 }
-{-
+{- v1
 int check_signers_all_unique(cell signers) impure inline {
     ;; - O(n^2) complexity
     ;; - O(n) memory
@@ -53,6 +53,7 @@ int check_signers_all_unique(cell signers) impure inline {
 }
 -}
 
+{- v2
 int check_signers_all_unique(cell signers) impure inline {
     ;; Early exit if dictionary is empty
     (int first_idx, slice first_value, int found?) = signers.udict_get_next?(INDEX_SIZE, -1);
@@ -78,6 +79,40 @@ int check_signers_all_unique(cell signers) impure inline {
                 return false;  ;; Found duplicate - exit early
             }
             (j, j_value, j_found?) = signers.udict_get_next?(INDEX_SIZE, j);
+        }
+    }
+
+    return true;  ;; No duplicates found
+}
+-}
+
+{- v3 -}
+int check_signers_all_unique(cell signers) impure inline {
+    ;; Early exit if dictionary is empty
+    (int first_idx, slice first_value, int found?) = signers.udict_get_next?(INDEX_SIZE, -1);
+    if (~ found?) {
+        return true;
+    }
+
+    ;; initialize new dictionary
+    cell temp_signer_dict = new_dict();
+
+    int i = -1;
+    repeat (MASK_SIZE) {  ;; Use fixed upper bound instead of dynamic check
+        (i, slice i_value, int i_found?) = signers.udict_get_next?(INDEX_SIZE, i);
+        if (~ i_found?) {
+            ;; Reached end of dictionary - all values were unique
+            return true;
+        }
+
+        ;; Start checking from next index to avoid self-comparison
+        int address_hash = i_value.slice_hash();
+        (slice val, int found?) = temp_signer_dict.udict_get?(HASH_SIZE, address_hash);
+
+        if (~ found?) {
+            temp_signer_dict~udict_set(HASH_SIZE, address_hash, null()); ;; insert empty cell
+        } else {
+            return false;  ;; Found duplicate - exit early
         }
     }
 
